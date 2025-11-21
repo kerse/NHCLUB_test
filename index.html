@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Клуб «Новые Горизонты»</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Playfair Display', 'serif'],
+            },
+            colors: {
+              stone: {
+                50: '#fafaf9',
+                100: '#f5f5f4',
+                200: '#e7e5e4',
+                800: '#292524',
+                900: '#1c1917',
+              },
+              amber: {
+                300: '#fcd34d',
+                400: '#fbbf24',
+                500: '#f59e0b',
+                600: '#d97706',
+              },
+              slate: {
+                800: '#1e293b',
+                900: '#0f172a',
+              }
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'fade-in-up': 'fadeInUp 0.8s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #fafaf9; }
+      ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+      html { scroll-behavior: smooth; }
+      
+      @keyframes subtle-drift {
+          0% { transform: scale(1.0) translate(0, 0); }
+          50% { transform: scale(1.15) translate(-3%, -4%); }
+          100% { transform: scale(1.0) translate(0, 0); }
+      }
+      .animate-subtle-drift {
+          animation: subtle-drift 45s ease-in-out infinite;
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+  }
+}
+</script>
+</head>
+<body class="bg-stone-50 text-stone-800 antialiased">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Lucide replacements) ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const ArrowRight = (props) => <IconWrapper {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></IconWrapper>;
+        const Globe = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></IconWrapper>;
+        const Zap = (props) => <IconWrapper {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconWrapper>;
+        const BatteryWarning = (props) => <IconWrapper {...props}><path d="M14 7h2a2 2 0 0 1 2 2v6c0 1-1 2-2 2h-2"/><path d="M6 7H4a2 2 0 0 0-2 2v6c0 1 1 2 2 2h2"/><line x1="22" x2="22" y1="11" y2="13"/><line x1="10" x2="10" y1="7" y2="17"/><line x1="10" x2="10" y1="17" y2="17.01"/></IconWrapper>; // Simplified visual
+        const Scale = (props) => <IconWrapper {...props}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></IconWrapper>;
+        const Users = (props) => <IconWrapper {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconWrapper>;
+        const Sparkles = (props) => <IconWrapper {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></IconWrapper>;
+        const BrainCircuit = (props) => <IconWrapper {...props}><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 3 2.5 2.5 0 0 0 .02 4.5 2.5 2.5 0 0 0 1.77 3.5 2.5 2.5 0 0 0 2.83 1.9 2.5 2.5 0 0 0 4.53-.9 2.5 2.5 0 0 0 3.1 2.5 2.5 2.5 0 0 0 1.65-3.26 2.5 2.5 0 0 0 1.6-3.75 2.5 2.5 0 0 0-1.28-3.5 2.5 2.5 0 0 0-2.1-2.37 2.5 2.5 0 0 0-3.07-1.16Z"/><path d="M12 13V9"/><path d="M12 21v-4"/><path d="M12 4v1"/></IconWrapper>;
+        const MessageCircleHeart = (props) => <IconWrapper {...props}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M12 8v.01"/><path d="M12 12v.01"/><path d="M12 16v.01"/></IconWrapper>; // Placeholder for msg heart
+        const CheckCircle2 = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></IconWrapper>;
+        const Plus = (props) => <IconWrapper {...props}><path d="M5 12h14"/><path d="M12 5v14"/></IconWrapper>;
+        const Check = (props) => <IconWrapper {...props}><path d="M20 6 9 17l-5-5"/></IconWrapper>;
+        const RefreshCw = (props) => <IconWrapper {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconWrapper>;
+
+        // --- UI COMPONENTS ---
+        const Section = ({ children, className = '', id, bg = 'white' }) => {
+            const bgColors = {
+                white: 'bg-white',
+                stone: 'bg-stone-50',
+                dark: 'bg-stone-900 text-stone-100',
+            };
+            return (
+                <section id={id} className={`py-16 md:py-24 px-4 md:px-8 ${bgColors[bg]} ${className}`}>
+                    <div className="max-w-6xl mx-auto w-full">
+                        {children}
+                    </div>
+                </section>
+            );
+        };
+
+        // --- FEATURE COMPONENTS ---
+        const Hero = () => {
+            return (
+                <section className="relative min-h-screen flex items-center justify-center overflow-hidden text-stone-900">
+                    <div className="absolute inset-0 z-0">
+                        <img 
+                            src="img/beach.jpg" 
+                            alt="White sand beach and clouds" 
+                            className="w-full h-full object-cover animate-subtle-drift"
+                        />
+                    </div>
+
+                    <div className="relative z-10 max-w-5xl mx-auto px-4 text-center flex flex-col items-center pt-8 md:pt-0">
+                        <div className="flex flex-col items-center mb-8 animate-fade-in">
+                            <div className="mb-4">
+                                <img 
+                                    src="img/logo.png" 
+                                    alt="Логотип Клуба" 
+                                    className="w-20 h-20 object-cover"
+                                />
+                            </div>
+                            <span className="font-serif text-2xl font-bold text-stone-900 tracking-wide drop-shadow-sm">
+    Клуб Новые Горизонты
+</span>
+                        </div>
+
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-stone-200 text-stone-600 text-sm mb-8 animate-fade-in-up shadow-sm">
+                            <Zap size={14} className="text-amber-500" />
+                            <span className="tracking-wide font-medium uppercase text-xs">Духовность × Технологии</span>
+                        </div>
+
+                        <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-medium leading-tight mb-6 text-stone-900 tracking-tight drop-shadow-sm">
+                            Стань осознанным автором <br />
+                            <span className="italic text-stone-700">своей Реальности</span>
+                        </h1>
+                        
+                        <p className="text-lg md:text-xl text-stone-800 max-w-2xl mb-10 leading-relaxed font-medium bg-white/20 backdrop-blur-sm p-6 rounded-2xl">
+    Закрытый клуб, где духовная глубина соединяется с материальной эффективностью, нейросетями и четкими алгоритмами ЗАР-системы.
+</p>
+
+                        <a 
+                            href="https://t.me/nhclub_joinbot" 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group relative overflow-hidden rounded-full bg-slate-900 px-8 py-4 text-white shadow-xl transition-all hover:bg-amber-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                        >
+                            <div className="flex items-center gap-3 font-medium text-lg">
+                                <span>Начать путь к себе</span>
+                                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                            </div>
+                        </a>
+
+                        <p className="mt-6 text-sm text-stone-700 font-bold opacity-90 bg-white/30 px-3 py-1 rounded-lg backdrop-blur-sm">
+                            Твоя трансформация начинается с одного клика
+                        </p>
+                    </div>
+                </section>
+            );
+        };
+
+        // Unified Card Component used in Diagnostics and Methodology
+        const ContentCard = ({ icon: Icon, title, description, list, accentColor }) => (
+            <div className="bg-stone-50 rounded-3xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-stone-100 group h-full flex flex-col">
+                <div className={`w-14 h-14 rounded-2xl ${accentColor} flex items-center justify-center mb-6 text-white shadow-md group-hover:scale-110 transition-transform`}>
+                    <Icon size={28} />
+                </div>
+                <h3 className="font-serif text-2xl font-semibold mb-4 text-stone-800">{title}</h3>
+                {description && <p className="text-stone-600 leading-relaxed mb-4 flex-grow">{description}</p>}
+                {list && (
+                    <ul className="space-y-3 mt-2">
+                        {list.map((item, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm text-stone-500">
+                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                                <span className="leading-snug">{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        );
+
+        const Diagnostics = () => {
+            return (
+                <Section bg="white" id="diagnostics">
+                    <div className="text-center mb-16">
+                        <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-4">
+                            Знакомо ли тебе это состояние?
+                        </h2>
+                        <p className="text-stone-500 text-lg max-w-2xl mx-auto">
+                            Честный взгляд на то, где ты сейчас находишься.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <ContentCard 
+                            icon={BatteryWarning}
+                            title="Усталость и хаос"
+                            accentColor="bg-amber-500"
+                            description="Чувствуешь, что живешь не свою жизнь, тонешь в рутине и «дне сурка»."
+                        />
+                        
+                        <ContentCard 
+                            icon={Scale}
+                            title="Дисбаланс"
+                            accentColor="bg-stone-600"
+                            description="Жизнь похожа на постоянное перетягивание каната:"
+                            list={[
+                                "Есть деньги — нет отношений",
+                                "Есть отношения — проседает здоровье",
+                                "Карьера растет — теряешь себя"
+                            ]}
+                        />
+                        
+                        <ContentCard 
+                            icon={Users}
+                            title="Чужие роли"
+                            accentColor="bg-slate-700"
+                            description="Ты играешь по чужим правилам:"
+                            list={[
+                                "Детская позиция: Обиды и ожидание",
+                                "Родительская позиция: Гиперопека и контроль"
+                            ]}
+                        />
+                    </div>
+
+                    <div className="mt-16 text-center">
+                        <div className="inline-block bg-stone-900 text-stone-50 px-8 py-6 rounded-2xl max-w-3xl mx-auto relative overflow-hidden shadow-lg">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-amber-600"></div>
+                            <h4 className="text-xl font-medium mb-2">Это сигналы того, что ты ушел со Своего Места.</h4>
+                            <p className="text-stone-300 font-light">
+                                На Своем Месте у тебя есть всё: <span className="text-amber-400 font-normal">Финансовое изобилие + Крепкое здоровье + Счастливые отношения.</span>
+                            </p>
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const InteractiveQuiz = () => {
+            const questions = [
+                {
+                    id: 1,
+                    question: "Как ты обычно чувствуешь себя по утрам?",
+                    options: [
+                        { text: "Полным сил и предвкушения нового дня", score: 3 },
+                        { text: "Нормально, но нужно время на раскачку", score: 2 },
+                        { text: "Разбитым, хочется спрятаться под одеяло", score: 1 },
+                    ]
+                },
+                {
+                    id: 2,
+                    question: "Что происходит, когда дела идут не по плану?",
+                    options: [
+                        { text: "Спокойно ищу решение и действую", score: 3 },
+                        { text: "Пытаюсь всё спасти и проконтролировать", score: 2 },
+                        { text: "Злюсь, виню обстоятельства или других", score: 1 },
+                    ]
+                },
+                {
+                    id: 3,
+                    question: "Как обстоят дела с балансом «Деньги — Отношения»?",
+                    options: [
+                        { text: "Гармония: растет доход и крепнут связи", score: 3 },
+                        { text: "Приходится жертвовать одним ради другого", score: 2 },
+                        { text: "Часто проседают обе сферы", score: 1 },
+                    ]
+                },
+                {
+                    id: 4,
+                    question: "Чувствуешь ли ты, что реализуешь свой потенциал?",
+                    options: [
+                        { text: "Абсолютно, я на своем месте", score: 3 },
+                        { text: "Вроде да, но чего-то не хватает", score: 2 },
+                        { text: "Нет, чувствую, что способен на большее", score: 1 },
+                    ]
+                }
+            ];
+
+            const [started, setStarted] = useState(false);
+            const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [showResult, setShowResult] = useState(false);
+
+            const handleOptionClick = (optionScore) => {
+                const newScore = score + optionScore;
+                setScore(newScore);
+
+                if (currentQuestionIndex < questions.length - 1) {
+                    setTimeout(() => setCurrentQuestionIndex(currentQuestionIndex + 1), 200);
+                } else {
+                    setTimeout(() => setShowResult(true), 200);
+                }
+            };
+
+            const restartQuiz = () => {
+                setScore(0);
+                setCurrentQuestionIndex(0);
+                setShowResult(false);
+                setStarted(false);
+            };
+
+            const getResultContent = (score) => {
+                if (score >= 10) {
+                    return {
+                        title: "Архетип: Творец Реальности",
+                        description: "У тебя мощная база! Ты готов к квантовому скачку. Тебе не нужно «лечение», тебе нужны инструменты масштабирования и среда равных, чтобы выйти на уровень Мастера.",
+                        cta: "Получить инструменты для масштабирования"
+                    };
+                } else if (score >= 6) {
+                    return {
+                        title: "Архетип: Искатель",
+                        description: "Ты стоишь на пороге перемен. Ты чувствуешь, где истина, но старые программы и страхи периодически отбрасывают назад. Тебе нужна система, чтобы закрепиться на новом уровне.",
+                        cta: "Забрать систему стабилизации состояния"
+                    };
+                } else {
+                    return {
+                        title: "Архетип: Спящий Герой",
+                        description: "Ты находишься в «Зоне Турбулентности». Твой колоссальный ресурс уходит на борьбу с сопротивлением и рутиной. Хорошая новость: ты можешь проснуться в любой момент.",
+                        cta: "Начать выход из «дня сурка»"
+                    };
+                }
+            };
+
+            const result = getResultContent(score);
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+
+            return (
+                <Section bg="stone" className="py-12 md:py-20">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="bg-white rounded-3xl shadow-xl shadow-stone-200/50 overflow-hidden border border-stone-100 min-h-[400px] flex flex-col relative">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-64 h-64 bg-stone-100/50 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
+
+                            {started && !showResult && (
+                                <div className="w-full bg-stone-50 h-2 relative">
+                                    <div 
+                                        className="h-full bg-amber-500 transition-all duration-500 ease-out"
+                                        style={{ width: `${progress}%` }}
+                                    ></div>
+                                </div>
+                            )}
+
+                            <div className="flex-1 p-8 md:p-12 flex flex-col justify-center relative z-10">
+                                {!started ? (
+                                    <div className="text-center space-y-6 animate-fade-in">
+                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-stone-100 text-amber-600 mb-2">
+                                            <BrainCircuit size={32} />
+                                        </div>
+                                        <h3 className="font-serif text-3xl md:text-4xl text-stone-900">
+                                            Экспресс-тест: <br />
+                                            <span className="text-stone-500">Насколько ты управляешь своей реальностью?</span>
+                                        </h3>
+                                        <p className="text-stone-600 text-lg max-w-lg mx-auto">
+                                            Ответь на 4 честных вопроса и узнай, в какой точке ты находишься прямо сейчас и какой инструмент тебе необходим.
+                                        </p>
+                                        <button 
+                                            onClick={() => setStarted(true)}
+                                            className="inline-flex items-center gap-2 bg-stone-900 text-white px-8 py-4 rounded-full font-medium hover:bg-amber-600 transition-all hover:scale-105 shadow-lg shadow-stone-900/10"
+                                        >
+                                            Пройти диагностику
+                                            <ArrowRight size={18} />
+                                        </button>
+                                    </div>
+                                ) : !showResult ? (
+                                    <div className="space-y-8 animate-fade-in w-full max-w-2xl mx-auto">
+                                        <div className="space-y-2">
+                                            <span className="text-xs font-bold tracking-wider text-amber-600 uppercase">
+                                                Вопрос {currentQuestionIndex + 1} из {questions.length}
+                                            </span>
+                                            <h3 className="font-serif text-2xl md:text-3xl text-stone-900 leading-tight">
+                                                {questions[currentQuestionIndex].question}
+                                            </h3>
+                                        </div>
+                                        <div className="grid gap-4">
+                                            {questions[currentQuestionIndex].options.map((option, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleOptionClick(option.score)}
+                                                    className="group text-left p-5 rounded-xl border-2 border-stone-100 hover:border-amber-400 hover:bg-amber-50/30 transition-all duration-200 flex items-center gap-4"
+                                                >
+                                                    <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center font-bold group-hover:bg-amber-500 group-hover:text-white transition-colors shrink-0">
+                                                        {String.fromCharCode(65 + idx)}
+                                                    </div>
+                                                    <div className="w-20 h-20 overflow-hidden mb-4 flex items-center justify-center">
+                                                        <img 
+                                                            src="img/logo.png" 
+                                                            alt="Логотип Клуба" 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <span className="text-stone-700 font-medium text-lg group-hover:text-stone-900">
+                                                        {option.text}
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center space-y-6 animate-fade-in">
+                                        <div className="inline-flex items-center gap-2 px-4 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-bold mb-2">
+                                            <Sparkles size={14} />
+                                            <span>Твой результат готов</span>
+                                        </div>
+                                        <h3 className="font-serif text-3xl md:text-5xl text-stone-900 mb-2">
+                                            {result.title}
+                                        </h3>
+                                        <div className="bg-stone-50 p-6 rounded-2xl border border-stone-100 max-w-xl mx-auto">
+                                            <p className="text-stone-700 text-lg leading-relaxed">
+                                                {result.description}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+                                            <a 
+                                                href="https://t.me/nhclub_joinbot" 
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-amber-600 transition-all shadow-xl shadow-amber-900/10"
+                                            >
+                                                {result.cta}
+                                                <ArrowRight size={20} />
+                                            </a>
+                                            <button 
+                                                onClick={restartQuiz}
+                                                className="flex items-center gap-2 text-stone-400 hover:text-stone-600 text-sm font-medium px-4 py-2 transition-colors"
+                                            >
+                                                <RefreshCw size={14} />
+                                                Пройти заново
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-stone-400 mt-4">
+                                            *Персональная рекомендация и доступ к материалам будут ждать в боте
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const Solution = () => {
+            return (
+                <Section bg="stone" className="relative overflow-hidden">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className="relative order-2 md:order-1">
+                            <div className="aspect-square rounded-full overflow-hidden border border-stone-200 relative z-10">
+                                <img 
+                                    src="img/founders.jpg" 
+                                    alt="Meditation and Tech" 
+                                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                                />
+                            </div>
+                            <div className="absolute -top-10 -left-10 w-full h-full border border-stone-200 rounded-full z-0"></div>
+                            <div className="absolute top-10 left-10 w-full h-full border border-amber-200/50 rounded-full z-0"></div>
+                        </div>
+
+                        <div className="order-1 md:order-2">
+                            <h2 className="font-serif text-3xl md:text-5xl text-stone-900 mb-6 leading-tight">
+                                Мы не просто учим медитировать. <br />
+                                <span className="text-stone-500 italic text-2xl md:text-4xl">Мы даем инструменты для реальной жизни.</span>
+                            </h2>
+                            <div className="space-y-6 text-lg text-stone-600 font-light">
+                                <p>
+                                    Клуб <strong className="text-stone-900 font-medium">«Новые горизонты»</strong> — это экосистема, где ты обретаешь Взрослую позицию. Это баланс между связью с Высшим Я и твердой опорой на земле.
+                                </p>
+                            </div>
+                            <div className="mt-10 bg-white p-6 rounded-xl border-l-4 border-amber-500 shadow-sm">
+                                <p className="text-sm text-stone-400 uppercase tracking-wider mb-2">Наша формула</p>
+                                <div className="font-serif text-xl md:text-2xl text-stone-800">
+                                    Духовные практики <br />
+                                    <span className="text-amber-500">+</span> Квантовая психология <br />
+                                    <span className="text-amber-500">+</span> Нейросети и Планирование
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-stone-100 text-slate-600 font-medium flex items-center gap-2">
+                                    = Твоя новая реальность
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const Methodology = () => {
+            return (
+                <Section bg="white">
+                    <div className="text-center mb-16">
+                        <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-4">
+                            Что внутри? Твои инструменты
+                        </h2>
+                        <p className="text-stone-500">
+                            Синтез науки, технологий и духовности.
+                        </p>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <ContentCard 
+                            icon={Sparkles}
+                            title="ЗАР-система"
+                            accentColor="bg-amber-500"
+                            list={[
+                                "Уникальные алгоритмы для переформатирования подсознательного опыта.",
+                                "Инструменты самопомощи: стань психологом самому себе.",
+                                "Трансформация деструктивных программ в чистый ресурс."
+                            ]}
+                        />
+                        <ContentCard 
+                            icon={BrainCircuit}
+                            title="Эффективность и AI"
+                            accentColor="bg-slate-700"
+                            list={[
+                                "Разгрузи мозг: методики фокусировки и освобождения памяти.",
+                                "ИИ-ассистент: получай консультацию в любое время.",
+                                "Четкая структура дня и управление временем."
+                            ]}
+                        />
+                        <ContentCard 
+                            icon={MessageCircleHeart}
+                            title="Живое сообщество"
+                            accentColor="bg-stone-600"
+                            list={[
+                                "Принцип «Свой среди своих» — окружение, которое тянет вверх.",
+                                "Нетворкинг мирового масштаба.",
+                                "Поддержка наставников и регулярные живые эфиры."
+                            ]}
+                        />
+                    </div>
+                </Section>
+            );
+        };
+
+        const Results = () => {
+            const timeline = [
+                {
+                    period: "Сразу",
+                    title: "Первый вдох",
+                    desc: "Снижение стресса, прилив энергии, ощущение поддержки, глубокое понимание «я не один» и «со мной всё так»."
+                },
+                {
+                    period: "3 месяца",
+                    title: "Новые рельсы",
+                    desc: "Навык быстро разгружать мозг, внедрение нейросетей в работу. Первые ощутимые изменения в финансах и тепле отношений."
+                },
+                {
+                    period: "6 месяцев",
+                    title: "Автор реальности",
+                    desc: "Полное освоение роли Автора. Ты понимаешь первопричины событий, управляешь эмоциями и твердо стоишь на Своем Месте."
+                }
+            ];
+
+            return (
+                <Section bg="stone">
+                    <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-12 text-center">
+                        Что изменится?
+                    </h2>
+                    <div className="max-w-4xl mx-auto relative">
+                        <div className="absolute left-[20px] md:left-1/2 top-0 bottom-0 w-px bg-stone-300 transform md:-translate-x-1/2"></div>
+                        <div className="space-y-12">
+                            {timeline.map((item, index) => (
+                                <div key={index} className={`relative flex items-center gap-8 ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                                    <div className="absolute left-[20px] md:left-1/2 w-10 h-10 rounded-full bg-white border-4 border-amber-400 flex items-center justify-center z-10 transform -translate-x-1/2 shadow-sm text-sm font-bold text-amber-900">
+                                        {index + 1}
+                                    </div>
+                                    <div className={`w-full md:w-1/2 pl-16 md:pl-0 ${index % 2 === 0 ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
+                                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 hover:border-amber-200 transition-colors">
+                                            <span className="inline-block px-4 py-1.5 bg-stone-100 rounded-full text-sm font-bold text-stone-500 mb-4 uppercase tracking-wider">
+                                                {item.period}
+                                            </span>
+                                            <h3 className="font-serif text-2xl font-bold text-stone-800 mb-3">{item.title}</h3>
+                                            <p className="text-stone-600 text-lg leading-relaxed">
+                                                {item.desc}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="hidden md:block w-1/2"></div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const FAQ = () => {
+            const questions = [
+                { q: "Нужен ли опыт в медитациях?", a: "Нет, программа подходит и новичкам, и экспертам. Мы даем пошаговые инструкции с нуля." },
+                { q: "Поможет ли это решить проблему с деньгами или отношениями?", a: "Да. Инструменты клуба универсальны, так как работают с первопричиной в голове, а не со следствиями. Меняя мышление, вы меняете внешнюю реальность." },
+                { q: "Сколько времени это занимает?", a: "Эфиры и практики интегрируются в жизнь, а не отнимают его. Использование наших нейросетевых шаблонов освобождает вам часы времени еженедельно." },
+                { q: "В чем отличие от курсов?", a: "Это не разовый тренинг, который заканчивается через месяц. Это живой организм, постоянная поддержка, актуальные знания и окружение." }
+            ];
+
+            const QAItem = ({ question, answer }) => (
+                <details className="group bg-stone-50 rounded-xl overflow-hidden border border-transparent hover:border-stone-200 transition-all">
+                    <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                        <h4 className="font-medium text-lg text-stone-800 pr-8">{question}</h4>
+                        <span className="transition-transform duration-300 group-open:rotate-45">
+                            <Plus className="text-amber-500" />
+                        </span>
+                    </summary>
+                    <div className="px-6 pb-6 pt-0 text-stone-600 leading-relaxed animate-fade-in">
+                        {answer}
+                    </div>
+                </details>
+            );
+
+            return (
+                <Section bg="white">
+                    <div className="max-w-3xl mx-auto">
+                        <h2 className="font-serif text-3xl md:text-4xl text-stone-900 mb-10 text-center">
+                            Частые вопросы
+                        </h2>
+                        <div className="space-y-4">
+                            {questions.map((item, i) => (
+                                <QAItem key={i} question={item.q} answer={item.a} />
+                            ))}
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const PricingCTA = () => {
+            return (
+                <Section bg="dark" className="relative overflow-hidden">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-amber-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+                    <div className="relative z-10 max-w-4xl mx-auto text-center">
+                        <div className="inline-flex items-center gap-2 bg-stone-800 rounded-full px-4 py-1 text-amber-400 text-sm font-medium mb-6">
+                            <Sparkles size={14} />
+                            <span>Твой путь начинается здесь</span>
+                        </div>
+                        <h2 className="font-serif text-4xl md:text-6xl text-white mb-6">
+                            Выбери свой горизонт
+                        </h2>
+                        <p className="text-stone-400 text-lg mb-12">
+                            Доступ к клубу скоро открывается. Получи полную экосистему развития.
+                        </p>
+                        <div className="bg-stone-800/50 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-stone-700 max-w-2xl mx-auto">
+                            <div className="grid sm:grid-cols-2 gap-8 text-left mb-10">
+                                <ul className="space-y-4">
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Живые эфиры с экспертами
+                                    </li>
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Закрытый чат и база знаний
+                                    </li>
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Реферальная система
+                                    </li>
+                                </ul>
+                                <ul className="space-y-4">
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Тренажеры для мозга
+                                    </li>
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Домашние задания и разборы
+                                    </li>
+                                    <li className="flex items-center gap-3 text-stone-300">
+                                        <div className="bg-amber-900/50 p-1 rounded-full"><Check size={16} className="text-amber-500" /></div>
+                                        Доступ к ИИ-консультанту
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="text-center space-y-4">
+                                <p className="text-stone-400 text-sm">
+                                    Регистрация, выбор тарифа и оплата происходят в нашем удобном Telegram-боте. <br className="hidden md:block" />
+                                    Там же ты познакомишься со своим цифровым помощником.
+                                </p>
+                                <a 
+                                    href="https://t.me/nhclub_joinbot" 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex w-full md:w-auto items-center justify-center gap-3 bg-amber-600 text-white text-lg font-bold px-8 py-5 rounded-xl hover:bg-amber-500 transition-all shadow-lg shadow-amber-900/20 transform hover:scale-[1.02]"
+                                >
+                                    <span>Занять свое место</span>
+                                    <ArrowRight />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+            );
+        };
+
+        const App = () => {
+            const [showStickyNav, setShowStickyNav] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    if (window.scrollY > 600) {
+                        setShowStickyNav(true);
+                    } else {
+                        setShowStickyNav(false);
+                    }
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            return (
+                <main className="min-h-screen relative flex flex-col">
+                    <div 
+                        className={`fixed top-0 left-0 right-0 z-50 bg-stone-50/90 backdrop-blur-md border-b border-stone-200 transition-transform duration-300 ${showStickyNav ? 'translate-y-0' : '-translate-y-full'}`}
+                    >
+                        <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <span className="font-serif font-bold text-lg text-stone-800 hidden sm:block">Новые Горизонты</span>
+                            <a 
+                                href="https://t.me/nhclub_joinbot" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-amber-600 transition-colors ml-auto sm:ml-0"
+                            >
+                                Вступить в клуб <ArrowRight size={16} />
+                            </a>
+                        </div>
+                    </div>
+
+                    <Hero />
+                    <Diagnostics />
+                    <InteractiveQuiz />
+                    <Solution />
+                    <Methodology />
+                    <Results />
+                    <FAQ />
+                    <PricingCTA />
+
+                    <footer className="bg-stone-900 text-stone-400 py-8 px-4 text-center text-sm">
+                        <div className="max-w-6xl mx-auto">
+                            <p>&copy; {new Date().getFullYear()} Клуб «Новые Горизонты». Все права защищены.</p>
+                            <p className="mt-2 opacity-60">Политика конфиденциальности | Оферта</p>
+                        </div>
+                    </footer>
+                </main>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
